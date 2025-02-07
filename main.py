@@ -7,6 +7,7 @@ import threading
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
+from logger import LoggerSingleton
 
 
 load_dotenv(override=True)
