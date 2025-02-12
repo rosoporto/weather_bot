@@ -11,7 +11,9 @@ from dotenv import load_dotenv
 from telebot import TeleBot, types
 from utils import logger, location as gps
 from utils.commands import default_commands
+from contents import output
 from contents.emoji import emoji_dict
+
 
 
 emoji_dict
@@ -160,12 +162,18 @@ class WeatherBot:
             
             weather_emoji = self.get_weather_emoji(icon_code)
             
-            return (f"🌍 Погода в {city}\n\n"
-                    f"{weather_emoji} {description.capitalize()}\n\n"
-                    f"🌡 Температура: {temp:.1f}°C\n"
-                    f"🤔 Ощущается как: {feels_like:.1f}°C\n"
-                    f"💧 Влажность: {humidity}%\n"
-                    f"💨 Скорость ветра: {wind_speed} м/с")
+
+            content = output.WEATHER_OUTPUT_FORMAT.format(
+                city=city,
+                weather_emoji=weather_emoji,
+                description=description.capitalize(),
+                temp=temp,
+                feels_like=feels_like,
+                humidity=humidity,
+                wind_speed=wind_speed,
+                visibility=data['visibility'] / 1000  # Переводим в километры
+            )
+            return content
         else:
             return "❌ Не удалось получить информацию о погоде."
 
