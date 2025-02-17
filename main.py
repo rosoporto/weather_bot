@@ -75,12 +75,11 @@ class WeatherBot:
                 self.ask_location(chat_id)  # Перенаправляем пользователя на ask_location()            
             elif call.data in ["08:00", "12:00", "18:00"]:
                 self.set_time(chat_id, call.data)  # Устанавливаем время уведомления            
-            else:
-                location_name = config.cities[call.data]  # Получаем название города из callback_data
-                self.set_location(chat_id, location_name)  # Устанавливаем местоположение    
+            else:                
+                self.set_location(chat_id, call.data)  # Устанавливаем местоположение    
     
-    def ask_city(self, chat_id):        
-        markup = types.InlineKeyboardMarkup()
+    def ask_city(self, chat_id):
+        markup = types.InlineKeyboardMarkup(row_width=2)
                 
         for city in config.cities.keys():
             button = types.InlineKeyboardButton(text=city, callback_data=city)
