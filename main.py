@@ -42,6 +42,15 @@ class WeatherBot:
         @self.bot.message_handler(commands=['reset'])
         def handle_reset(message):
             self.reset_user_data(message.chat.id)
+        
+        @self.bot.message_handler(commands=['now'])
+        def get_weather_now(message: types.Message):
+            chat_id = message.chat.id
+            location = self.users.get(chat_id, {}).get("location")
+            if not location:
+                self.bot.send_message(chat_id, "❌ Локация не настроена. Используйте /start для настройки.")
+                return
+            self.send_weather(chat_id)
 
         @self.bot.message_handler(func=lambda message: True)
         def handle_message(message):
