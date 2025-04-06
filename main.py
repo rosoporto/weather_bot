@@ -15,11 +15,9 @@ from contents import output
 from contents.emoji import emoji_dict
 
 
-
-emoji_dict
 load_dotenv(override=True)
-tg_api_token=os.getenv("TG_API_TOKEN")
-weather_api_key=os.getenv("WEATHER_API_KEY")
+tg_api_token = os.getenv("TG_API_TOKEN")
+weather_api_key = os.getenv("WEATHER_API_KEY")
 
 bot = TeleBot(tg_api_token)
 logger_dev = logger.setup_logger()
@@ -36,13 +34,13 @@ class WeatherBot:
         @self.bot.message_handler(commands=['start'])
         def start(message):
             self.users[message.chat.id] = {}
-            self.bot.reply_to(message, "Привет! Я бот погоды. Давайте настроим ваши уведомления.")            
+            self.bot.reply_to(message, "Привет! Я бот погоды. Давайте настроим ваши уведомления.")
             self.ask_city(message.chat.id)
-            
+
         @self.bot.message_handler(commands=['reset'])
         def handle_reset(message):
             self.reset_user_data(message.chat.id)
-        
+
         @self.bot.message_handler(commands=['now'])
         def get_weather_now(message: types.Message):
             chat_id = message.chat.id
@@ -75,36 +73,36 @@ class WeatherBot:
                         self.users[chat_id]["state"] = "waiting_for_time"
                     else:
                         self.bot.send_message(chat_id, "Пожалуйста, выберите 'location' или 'time'")
-        
+
         @self.bot.callback_query_handler(func=lambda call: True)
         def handle_query(call):
             chat_id = call.message.chat.id
-            
-            if call.data == "Другой":                
-                self.ask_location(chat_id)  # Перенаправляем пользователя на ask_location()            
+
+            if call.data == "Другой":
+                self.ask_location(chat_id)  # Перенаправляем пользователя на ask_location()
             elif call.data in ["08:00", "12:00", "18:00"]:
-                self.set_time(chat_id, call.data)  # Устанавливаем время уведомления            
-            else:                
-                self.set_location(chat_id, call.data)  # Устанавливаем местоположение    
-    
+                self.set_time(chat_id, call.data)  # Устанавливаем время уведомления
+            else:
+                self.set_location(chat_id, call.data)  # Устанавливаем местоположение
+
     def ask_city(self, chat_id):
         markup = types.InlineKeyboardMarkup(row_width=2)
-                
+
         for city in config.cities.keys():
             button = types.InlineKeyboardButton(text=city, callback_data=city)
             markup.add(button)
-        
+
         # Добавляем кнопку "Другой"
         other_button = types.InlineKeyboardButton(text="Другой", callback_data="Другой")
-        markup.add(other_button)    
+        markup.add(other_button)
         self.bot.send_message(chat_id, "Пожалуйста, выберите город:", reply_markup=markup)
-    
+
     def ask_location(self, chat_id):
         if chat_id not in self.users:
-            self.users[chat_id] = {}      
+            self.users[chat_id] = {}
         self.bot.send_message(chat_id, "Пожалуйста, введите название города:")
         self.users[chat_id] = {"state": "waiting_for_location"}
-        
+
     def set_location(self, chat_id, location_name):
         try:
             data_city = gps.search_city(location_name)
@@ -115,9 +113,9 @@ class WeatherBot:
             logger_dev.error(e)
             self.bot.send_message(chat_id, "❌ Не удалось найти город. Пожалуйста, введите корректное название.")
             return
-        
+
         try:
-            lat, lon = float(data_city['lat']), float(data_city['lon'])      
+            lat, lon = float(data_city['lat']), float(data_city['lon'])
             url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={self.weather_api_key}&units=metric"
             response = requests.get(url)
             response.raise_for_status()  # Это выбросит исключение для статусов 4xx и 5xx
@@ -127,10 +125,10 @@ class WeatherBot:
             if data.get("cod") != 200:
                 raise ValueError("Код ответа не равен 200")
 
-        except (requests.exceptions.RequestException, ValueError) as e:
+        except (requests.exceptions.RequestException, ValueError):
             self.bot.send_message(chat_id, "❌ Не удалось найти город. Пожалуйста, введите корректное название.")
             return
-        
+
         self.users[chat_id]["location"] = {
             "city": data_city['city'],
             "lat": lat,
@@ -142,10 +140,10 @@ class WeatherBot:
     def set_time(self, chat_id, time_str):
         try:
             datetime.strptime(time_str, "%H:%M")
-            
+
             if chat_id not in self.users:
                 return
-            
+
             self.users[chat_id]["time"] = time_str
             self.users[chat_id]["state"] = "configured"
             self.bot.send_message(chat_id, f"Настройка завершена! Вы будете получать уведомления в {time_str} ежедневно.")
@@ -157,19 +155,18 @@ class WeatherBot:
         city = location["city"]
         lat = location["lat"]
         lon = location["lon"]
-        url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={self.weather_api_key}&units=metric&lang=ru"        
+        url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={self.weather_api_key}&units=metric&lang=ru"
         response = requests.get(url)
         data = response.json()
         if data.get("cod") == 200:
-            temp =        data["main"]["temp"]
-            feels_like =  data["main"]["feels_like"]
-            humidity =    data["main"]["humidity"]
-            wind_speed =  data["wind"]["speed"]
+            temp = data["main"]["temp"]
+            feels_like = data["main"]["feels_like"]
+            humidity = data["main"]["humidity"]
+            wind_speed = data["wind"]["speed"]
             description = data["weather"][0]["description"]
-            icon_code =   data["weather"][0]["icon"]
-            
+            icon_code = data["weather"][0]["icon"]
+
             weather_emoji = self.get_weather_emoji(icon_code)
-            
 
             content = output.WEATHER_OUTPUT_FORMAT.format(
                 city=city,
@@ -185,7 +182,7 @@ class WeatherBot:
         else:
             return "❌ Не удалось получить информацию о погоде."
 
-    def get_weather_emoji(self, icon_code):        
+    def get_weather_emoji(self, icon_code):
         return emoji_dict.get(icon_code, "🌈")
 
     def send_weather(self, chat_id):
@@ -230,6 +227,3 @@ if __name__ == "__main__":
     bot = WeatherBot(tg_api_token)
     logger_dev.debug("Start app")
     bot.run()
-
-
-

@@ -6,6 +6,7 @@ from .logger import setup_logger
 
 logger_dev = setup_logger()
 
+
 @lru_cache()
 def download_csv():
     url = "https://raw.githubusercontent.com/epogrebnyak/ru-cities/main/assets/towns.csv"
@@ -30,9 +31,9 @@ def read_csv(csv_data):
 
 
 def search_city(query):
-    csv_data = download_csv()    
+    csv_data = download_csv()
     cities = read_csv(csv_data)
-    
+
     query = query.lower()
     try:
         return next(city for city in cities if query in city['city'].lower())
@@ -46,9 +47,9 @@ if __name__ == "__main__":
         query = input("Введите название города (или 'q' для выхода): ")
         if query.lower() == 'q':
             break
-        
+
         city = search_city(query)
-        
+
         if city:
             print(f"Город: {city['city']}")
             print(f"Население: {city['population']}")
